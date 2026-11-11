@@ -84,7 +84,8 @@
       layer.setStyle(STYLE_IDLE);
     });
     layer.on('click', function () {
-      if (App.state.activeZoneId) return;
+      // в режиме редактора клик по карте только показывает координаты
+      if (App.state.activeZoneId || App.editMode) return;
       App.selectZone(zone.id);
     });
     App.zoneLayers[zone.id] = layer;

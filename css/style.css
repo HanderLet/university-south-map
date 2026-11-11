@@ -186,3 +186,24 @@ body.theme-night #map { background: var(--sea-night); }
 
 /* Чёрный контур Острова ФБР на ночной карте — со светлым ореолом */
 body.theme-night .zone-fbi { filter: drop-shadow(0 0 2px rgba(255, 255, 255, .9)); }
+
+/* ---------- Режим редактора ---------- */
+
+#editor-panel {
+    position: fixed;
+    top: 90px;
+    left: 10px;
+    z-index: 950;
+    width: min(280px, calc(100vw - 20px));
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(20, 22, 28, .92);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .4);
+    font-size: 13px;
+}
+#editor-panel[hidden] { display: none; }
+.ed-title { font-weight: 700; color: #ff7a9a; }
+.ed-hint { color: var(--muted); margin: 2px 0 6px; }
+.ed-coords { font: 700 18px ui-monospace, Consolas, monospace; }
+.ed-status { color: #7ee08a; min-height: 1em; }
+.ed-warn { margin: 8px 0 0; padding-left: 18px; color: #ffcf6b; }
