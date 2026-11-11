@@ -162,3 +162,27 @@ body.theme-night #map { background: var(--sea-night); }
 .popup h3 { margin: 0 0 6px; font-size: 16px; }
 .popup .desc { margin: 0; font-size: 14px; line-height: 1.45; white-space: pre-line; }
 .popup .desc.empty { color: var(--muted); font-style: italic; }
+
+/* ---------- Переключатель день/ночь ---------- */
+
+#theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 950;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(255, 255, 255, .15);
+    border-radius: 50%;
+    background: rgba(26, 29, 36, .88);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .4);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform .2s, background .2s;
+}
+#theme-toggle:hover { transform: rotate(-15deg) scale(1.06); background: rgba(44, 49, 64, .95); }
+#theme-toggle:focus-visible { outline: 2px solid #8fb4ff; outline-offset: 2px; }
+
+/* Чёрный контур Острова ФБР на ночной карте — со светлым ореолом */
+body.theme-night .zone-fbi { filter: drop-shadow(0 0 2px rgba(255, 255, 255, .9)); }

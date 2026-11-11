@@ -95,7 +95,7 @@
   function popupContent(zone, point) {
     var box = el('div', 'popup');
     var h = el('h3', null, point.name);
-    h.style.color = zone.color;
+    h.style.color = G.readableOnDark(zone.color);
     box.appendChild(h);
     var text = typeof point.description === 'string' ? point.description.trim() : '';
     box.appendChild(el('p', text ? 'desc' : 'desc empty', text || 'Описание скоро появится'));
