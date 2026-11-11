@@ -104,7 +104,9 @@
   }
 
   function popupOptions() {
-    return { maxWidth: Math.min(300, window.innerWidth - 32), minWidth: 160, offset: [0, -6], autoPanPadding: [16, 16] };
+    // white-space: pre-line в описании мешает Leaflet измерить текст, поэтому задаём ширину явно
+    var max = Math.min(300, window.innerWidth - 32);
+    return { maxWidth: max, minWidth: Math.min(240, max), offset: [0, -6], autoPanPadding: [16, 16] };
   }
 
   // ---------- Лента ----------
