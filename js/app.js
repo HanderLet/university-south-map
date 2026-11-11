@@ -7,7 +7,9 @@
   // Общий вид — вся суша (на картинке вокруг много пустого моря)
   var overview = L.latLngBounds([G.toLatLng([180, 220]), G.toLatLng([1780, 1340])]);
 
-  var BACK_GUARD_MS = 400; // защита от двойного клика по карточке зоны
+  // Защита от двойного клика: после смены ленты (зоны <-> точки) второй клик
+  // попадает в новую карточку на том же месте — игнорируем клики по ленте это время.
+  var STRIP_GUARD_MS = 500;
   var STYLE_IDLE = { opacity: 0, fillOpacity: 0, weight: 2 };
 
   var checked = G.validateZones(typeof ZONES !== 'undefined' ? ZONES : []);
@@ -42,7 +44,7 @@
     overview: overview,
     zones: checked.zones,
     zoneLayers: {},
-    state: { activeZoneId: null, selectedAt: 0, markers: [] },
+    state: { activeZoneId: null, stripSwappedAt: 0, markers: [] },
   });
 
   function zoneById(id) {
@@ -122,7 +124,10 @@
       card.appendChild(el('span', 'card-title', zone.name));
       var n = zone.points.length;
       card.appendChild(el('span', 'card-sub', n ? n + ' ' + plural(n, 'точка', 'точки', 'точек') : 'Точек пока нет'));
-      card.addEventListener('click', function () { App.selectZone(zone.id); });
+      card.addEventListener('click', function () {
+        if (stripGuarded()) return;
+        App.selectZone(zone.id);
+      });
       card.addEventListener('mouseenter', function () { if (!App.state.activeZoneId) App.zoneLayers[zone.id].setStyle({ opacity: 1, weight: 2, fillOpacity: 0.05 }); });
       card.addEventListener('mouseleave', function () { if (!App.state.activeZoneId) App.zoneLayers[zone.id].setStyle(STYLE_IDLE); });
       track.appendChild(card);
@@ -136,7 +141,7 @@
     var back = el('button', 'card back-card', '← Все зоны');
     back.type = 'button';
     back.addEventListener('click', function () {
-      if (Date.now() - App.state.selectedAt < BACK_GUARD_MS) return;
+      if (stripGuarded()) return;
       App.showAllZones();
     });
     track.appendChild(back);
@@ -154,6 +159,10 @@
       track.appendChild(card);
     });
     strip.appendChild(track);
+  }
+
+  function stripGuarded() {
+    return Date.now() - App.state.stripSwappedAt < STRIP_GUARD_MS;
   }
 
   function plural(n, one, few, many) {
@@ -177,7 +186,7 @@
     if (!zone) return;
     clearActive();
     App.state.activeZoneId = id;
-    App.state.selectedAt = Date.now();
+    App.state.stripSwappedAt = Date.now();
 
     var layer = App.zoneLayers[id];
     layer.closeTooltip();
@@ -204,6 +213,7 @@
   App.showAllZones = function () {
     clearActive();
     App.state.activeZoneId = null;
+    App.state.stripSwappedAt = Date.now();
     setZonesClickable(true);
     renderZoneStrip();
     map.flyToBounds(overview, { padding: [12, 12], duration: 1 });
