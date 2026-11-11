@@ -90,7 +90,22 @@
     return out;
   }
 
+  // Цвет заголовка на тёмном фоне окна: цвет зоны, если он достаточно светлый
+  // (контраст ≥ 3:1 с фоном #1f232c), иначе светлый текст.
+  function readableOnDark(hex) {
+    var m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return '#e8eaf0';
+    var n = parseInt(m[1], 16);
+    var lin = function (c) {
+      c /= 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    var lum = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+    return lum >= 0.15 ? hex : '#e8eaf0';
+  }
+
   var api = {
+    readableOnDark: readableOnDark,
     IMG_W: IMG_W,
     IMG_H: IMG_H,
     toLatLng: toLatLng,

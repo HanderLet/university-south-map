@@ -85,3 +85,14 @@ test('findStrayPoints reports points outside their zone', () => {
 test('findStrayPoints is empty when all inside', () => {
   assert.deepEqual(G.findStrayPoints([{ id: 'b', name: 'B', outline: square, points: [{ name: 'in', coords: [1, 1] }] }]), []);
 });
+
+test('readableOnDark keeps bright zone colours', () => {
+  assert.equal(G.readableOnDark('#36c5f4'), '#36c5f4');
+  assert.equal(G.readableOnDark('#fdd12f'), '#fdd12f');
+});
+
+test('readableOnDark replaces too dark colours with light text', () => {
+  assert.equal(G.readableOnDark('#222222'), '#e8eaf0');
+  assert.equal(G.readableOnDark('#6a2c91'), '#e8eaf0');
+  assert.equal(G.readableOnDark('nonsense'), '#e8eaf0');
+});
