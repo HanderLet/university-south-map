@@ -34,7 +34,20 @@
   });
   mapLayer.on('load', function () {
     document.getElementById('map-error').hidden = true;
+    updateCrisp();
   });
+
+  // Карта — пиксель-арт. Когда пиксель картинки больше пикселя экрана,
+  // рисуем его чётким квадратом (как на примере UniverTutor), а на общем
+  // виде оставляем сглаживание — без него мелкие детали идут рябью.
+  function updateCrisp() {
+    var img = mapLayer.getElement();
+    var natural = img && img.naturalWidth;
+    if (!natural) return;
+    var screenPx = Math.pow(2, map.getZoom()) * G.IMG_W; // ширина карты на экране
+    map.getContainer().classList.toggle('crisp', screenPx >= natural);
+  }
+  map.on('zoomend', updateCrisp);
 
   var strip = document.getElementById('strip');
   var markers = L.layerGroup().addTo(map);
