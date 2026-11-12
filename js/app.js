@@ -19,7 +19,9 @@
     crs: L.CRS.Simple,
     zoomSnap: 0.25,
     zoomDelta: 0.5,
-    maxZoom: 1.5, // исходник 3584 px ≈ зум 0.84, дальше лёгкое увеличение
+    // Карта 2000 единиц шириной; на зуме 3.25 она ≈ 19000 px на экране —
+    // столько же, сколько у примера UniverTutor (3303 px × 2^2.5).
+    maxZoom: 3.25,
     maxBounds: bounds,
     maxBoundsViscosity: 1,
     attributionControl: false,
