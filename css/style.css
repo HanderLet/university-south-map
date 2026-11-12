@@ -207,3 +207,47 @@ body.theme-night .zone-fbi { filter: drop-shadow(0 0 2px rgba(255, 255, 255, .9)
 .ed-coords { font: 700 18px ui-monospace, Consolas, monospace; }
 .ed-status { color: #7ee08a; min-height: 1em; }
 .ed-warn { margin: 8px 0 0; padding-left: 18px; color: #ffcf6b; }
+
+/* ---------- Редактор точек (?edit) ---------- */
+
+.ed-btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, .15);
+    border-radius: 8px;
+    background: #2f3545;
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ed-btn:hover { background: #3a4256; }
+.ed-btn[hidden] { display: none; }
+.ed-primary { background: #2563eb; border-color: #3b82f6; }
+.ed-primary:hover { background: #1d4ed8; }
+.ed-danger { background: transparent; color: #ff8a8a; border-color: rgba(255, 138, 138, .4); }
+.ed-danger:hover { background: rgba(255, 80, 80, .12); }
+.ed-changes { margin-top: 8px; color: var(--muted); }
+.ed-changes.has-changes { color: #ffcf6b; }
+.ed-warn:empty { display: none; }
+
+.ed-form label { display: block; margin-bottom: 8px; font-size: 12px; color: var(--muted); }
+.ed-form input,
+.ed-form textarea {
+    display: block;
+    width: 100%;
+    margin-top: 3px;
+    padding: 6px 8px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 6px;
+    background: #14171d;
+    color: var(--text);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    resize: vertical;
+}
+.ed-form input:focus,
+.ed-form textarea:focus { outline: 2px solid #3b82f6; outline-offset: 0; }
+.ed-where { font: 12px ui-monospace, Consolas, monospace; color: var(--muted); }
+body.edit-mode .zone-marker { cursor: move; }
