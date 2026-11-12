@@ -115,23 +115,80 @@
   // Общий вид — все зоны с небольшим запасом (без зон — вся картинка)
   App.overview = overview = overview ? overview.pad(0.02) : bounds;
 
-  // ---------- Всплывающее окно точки ----------
+  // ---------- Памятка точки (панель справа, на телефоне — снизу) ----------
 
-  function popupContent(zone, point) {
-    var box = el('div', 'popup');
-    var h = el('h3', null, point.name);
-    h.style.color = G.readableOnDark(zone.color);
-    box.appendChild(h);
-    var text = typeof point.description === 'string' ? point.description.trim() : '';
-    box.appendChild(el('p', text ? 'desc' : 'desc empty', text || 'Описание скоро появится'));
-    return box;
+  var note = document.getElementById('note');
+  var noteHead = el('div', 'note-head');
+  var noteZone = el('span', 'note-zone');
+  var noteClose = el('button', 'note-close', '×');
+  noteClose.type = 'button';
+  noteClose.setAttribute('aria-label', 'Закрыть памятку');
+  var noteTitle = el('h2', 'note-title');
+  var noteBody = el('div', 'note-body');
+  noteHead.appendChild(noteZone);
+  noteHead.appendChild(noteClose);
+  note.appendChild(noteHead);
+  note.appendChild(noteTitle);
+  note.appendChild(noteBody);
+  L.DomEvent.disableClickPropagation(note);
+  L.DomEvent.disableScrollPropagation(note);
+  noteClose.addEventListener('click', function () { App.closeNote(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !note.hidden) App.closeNote();
+  });
+
+  function markActivePoint(index) {
+    App.state.markers.forEach(function (m, i) {
+      var node = m.getElement();
+      if (node) node.classList.toggle('is-active', i === index);
+    });
+    Array.prototype.forEach.call(strip.querySelectorAll('.point-card'), function (card) {
+      card.classList.toggle('is-active', Number(card.dataset.index) === index);
+    });
   }
 
+  // Сдвиг центра карты, чтобы точка оказалась посередине видимой части,
+  // а не под памяткой (справа — по ширине, на телефоне — по высоте)
+  function noteOffset() {
+    if (note.hidden) return L.point(0, 0);
+    var r = note.getBoundingClientRect();
+    var m = map.getContainer().getBoundingClientRect();
+    if (r.width > m.width * 0.7) return L.point(0, Math.max(0, m.bottom - r.top) / 2);
+    return L.point(Math.max(0, m.right - r.left) / 2, 0);
+  }
+
+  function centerBesideNote(latlng, zoom) {
+    return map.unproject(map.project(latlng, zoom).add(noteOffset()), zoom);
+  }
+
+  App.openNote = function (zoneId, index) {
+    var zone = zoneById(zoneId);
+    var point = zone && zone.points[index];
+    if (!point) return;
+    note.style.setProperty('--c', zone.color);
+    noteZone.textContent = zone.name;
+    noteTitle.textContent = point.name;
+    var text = typeof point.description === 'string' ? point.description.trim() : '';
+    noteBody.textContent = text || 'Описание скоро появится';
+    noteBody.classList.toggle('empty', !text);
+    noteBody.scrollTop = 0;
+    note.hidden = false;
+    App.state.notePoint = index;
+    markActivePoint(index);
+  };
+
+  App.closeNote = function () {
+    note.hidden = true;
+    App.state.notePoint = null;
+    markActivePoint(-1);
+  };
+
   function popupOptions() {
-    // white-space: pre-line в описании мешает Leaflet измерить текст, поэтому задаём ширину явно
+    // white-space: pre-line в тексте мешает Leaflet измерить его, поэтому задаём ширину явно
     var max = Math.min(300, window.innerWidth - 32);
     return { maxWidth: max, minWidth: Math.min(240, max), offset: [0, -6], autoPanPadding: [16, 16] };
   }
+  App.popupOptions = popupOptions; // окна редактора (?edit)
 
   // ---------- Лента ----------
 
@@ -174,6 +231,8 @@
     zone.points.forEach(function (point, i) {
       var card = el('button', 'card point-card');
       card.type = 'button';
+      card.dataset.index = i;
+      if (App.state.notePoint === i) card.classList.add('is-active');
       card.style.setProperty('--c', zone.color);
       card.appendChild(el('span', 'dot'));
       card.appendChild(el('span', 'card-title', point.name));
@@ -198,6 +257,7 @@
 
   function clearActive() {
     map.closePopup();
+    App.closeNote();
     markers.clearLayers();
     App.state.markers = [];
     Object.keys(App.zoneLayers).forEach(function (id) { App.zoneLayers[id].setStyle(STYLE_IDLE); });
@@ -225,8 +285,18 @@
         iconSize: [18, 18],
         iconAnchor: [9, 9],
       });
-      var m = L.marker(G.toLatLng(point.coords), { icon: icon, title: point.name, riseOnHover: true })
-        .bindPopup(popupContent(zone, point), popupOptions());
+      var m = L.marker(G.toLatLng(point.coords), { icon: icon, title: point.name, riseOnHover: true });
+      m.on('click', function () {
+        if (App.editMode) return; // в редакторе по клику открывается форма точки
+        App.openNote(zone.id, i);
+        // точка оказалась под памяткой — сдвигаем карту
+        var p = map.latLngToContainerPoint(m.getLatLng());
+        var off = noteOffset();
+        var size = map.getSize();
+        if ((off.x && p.x > size.x - 2 * off.x - 24) || (off.y && p.y > size.y - 2 * off.y - 24)) {
+          map.panTo(centerBesideNote(m.getLatLng(), map.getZoom()));
+        }
+      });
       m.pointIndex = i;
       markers.addLayer(m);
       App.state.markers.push(m);
@@ -255,8 +325,14 @@
     var m = App.state.markers[index];
     if (!m) return;
     map.stop();
-    map.setView(m.getLatLng(), Math.min(map.getMaxZoom(), map.getZoom() + 1), { animate: true });
-    setTimeout(function () { m.openPopup(); }, 400);
+    var z = Math.min(map.getMaxZoom(), map.getZoom() + 1);
+    if (App.editMode) {
+      map.setView(m.getLatLng(), z, { animate: true });
+      setTimeout(function () { m.openPopup(); }, 400);
+      return;
+    }
+    App.openNote(zoneId, index);
+    map.setView(centerBesideNote(m.getLatLng(), z), z, { animate: true });
   };
 
   App.refit = function () {
