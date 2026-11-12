@@ -4,8 +4,8 @@
 
   var G = window.MapGeo;
   var bounds = L.latLngBounds([[0, 0], [G.IMG_H, G.IMG_W]]);
-  // Общий вид — вся суша (на картинке вокруг много пустого моря)
-  var overview = L.latLngBounds([G.toLatLng([180, 220]), G.toLatLng([1780, 1340])]);
+  // Общий вид — охват всех зон (считается ниже, после построения контуров)
+  var overview = null;
 
   // Защита от двойного клика: после смены ленты (зоны <-> точки) второй клик
   // попадает в новую карточку на том же месте — игнорируем клики по ленте это время.
@@ -19,14 +19,14 @@
     crs: L.CRS.Simple,
     zoomSnap: 0.25,
     zoomDelta: 0.5,
-    maxZoom: 1,
+    maxZoom: 1.5, // исходник 3584 px ≈ зум 0.84, дальше лёгкое увеличение
     maxBounds: bounds,
     maxBoundsViscosity: 1,
     attributionControl: false,
     bounceAtZoomLimits: false,
   });
 
-  var mapLayer = L.imageOverlay('img/map-day.webp', bounds, { interactive: false }).addTo(map);
+  var mapLayer = L.imageOverlay('img/map-day.jpg', bounds, { interactive: false }).addTo(map);
   mapLayer.on('error', function () {
     document.getElementById('map-error').hidden = false;
   });
@@ -40,6 +40,7 @@
   var App = (window.App = {
     map: map,
     mapLayer: mapLayer,
+    mapImage: 'img/map-day.jpg',
     bounds: bounds,
     overview: overview,
     zones: checked.zones,
@@ -91,7 +92,10 @@
       App.selectZone(zone.id);
     });
     App.zoneLayers[zone.id] = layer;
+    overview = overview ? overview.extend(layer.getBounds()) : L.latLngBounds(layer.getBounds().getSouthWest(), layer.getBounds().getNorthEast());
   });
+  // Общий вид — все зоны с небольшим запасом (без зон — вся картинка)
+  App.overview = overview = overview ? overview.pad(0.02) : bounds;
 
   // ---------- Всплывающее окно точки ----------
 

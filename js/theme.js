@@ -4,7 +4,7 @@
 
   var App = window.App;
   var KEY = 'mapTheme';
-  var IMAGES = { day: 'img/map-day.webp', night: 'img/map-night.webp' };
+  var IMAGES = { day: 'img/map-day.jpg', night: 'img/map-night.jpg' };
   var button = document.getElementById('theme-toggle');
 
   function readSaved() {
@@ -28,7 +28,10 @@
     theme = theme === 'night' ? 'night' : 'day';
     App.theme = theme;
     document.body.classList.toggle('theme-night', theme === 'night');
-    if (App.mapLayer._url !== IMAGES[theme]) App.mapLayer.setUrl(IMAGES[theme]);
+    if (App.mapImage !== IMAGES[theme]) {
+      App.mapImage = IMAGES[theme];
+      App.mapLayer.setUrl(IMAGES[theme]);
+    }
     // значок показывает режим, на который переключит кнопка
     var night = theme === 'night';
     button.textContent = night ? '☀️' : '🌙';
