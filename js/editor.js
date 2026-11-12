@@ -148,9 +148,9 @@
 
     var descLabel = el('label', null, 'Описание');
     var desc = el('textarea');
-    desc.rows = 5;
+    desc.rows = 8;
     desc.value = point.description || '';
-    desc.placeholder = 'Краткое описание точки';
+    desc.placeholder = 'Описание точки — показывается в памятке справа. Можно в несколько абзацев.';
     descLabel.appendChild(desc);
 
     var where = el('div', 'ed-where', '[' + point.coords[0] + ', ' + point.coords[1] + '] — точку можно перетащить');
@@ -194,7 +194,7 @@
     App.state.markers.forEach(function (marker) {
       var point = zone.points[marker.pointIndex];
       var form = editForm(zone, point, marker);
-      marker.setPopupContent(form);
+      marker.bindPopup(form, App.popupOptions());
       if (marker.dragging) marker.dragging.enable();
       marker.on('dragend', function () {
         point.coords = G.toPixel(marker.getLatLng());
