@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 const G = require('../js/geo.js');
 const ZONES = require('../js/data.js');
 
-const IDS = ['state', 'farm', 'fbi', 'county', 'rich', 'race', 'outskirts'];
+const IDS = ['state', 'farm', 'fbi', 'county', 'rich', 'race', 'outskirts', 'alcatraz'];
 const COLORS = {
   state: '#36c5f4', farm: '#f26a21', fbi: '#222222', county: '#fdd12f',
-  rich: '#7ac70c', race: '#6a2c91', outskirts: '#e3172d',
+  rich: '#7ac70c', race: '#6a2c91', outskirts: '#e3172d', alcatraz: '#8f9bb3',
 };
 // Центры закрашенных пятен на разметке заказчика
 const ANCHORS = {
@@ -17,12 +17,16 @@ const ANCHORS = {
   rich: [[1550, 820], [1560, 1150]],
   race: [[870, 320]],
   outskirts: [[430, 1000], [330, 600]],
+  alcatraz: [[1065, 960]],
 };
-const NOWHERE = [[1100, 1300], [1230, 1010], [1065, 960]];
+// море, островок в конце длинного пирса, корабль у Основного Штата
+const NOWHERE = [[1100, 1300], [1230, 1010], [1057, 730]];
+// розовые точки с разметки заказчика (33 шт.)
+const POINT_COUNTS = { state: 13, farm: 6, fbi: 4, county: 5, rich: 2, race: 0, outskirts: 3, alcatraz: 0 };
 
 const zonesContaining = p => ZONES.filter(z => G.pointInZone(p, z.outline)).map(z => z.id);
 
-test('seven zones in fixed order', () => {
+test('eight zones in fixed order', () => {
   assert.deepEqual(ZONES.map(z => z.id), IDS);
 });
 
@@ -55,8 +59,12 @@ test('sea and small islands belong to no zone', () => {
   NOWHERE.forEach(p => assert.deepEqual(zonesContaining(p), [], `${p}`));
 });
 
-test('each zone has 2-3 points, all inside their zone', () => {
-  ZONES.forEach(z => assert.ok(z.points.length >= 2 && z.points.length <= 3, z.id));
+test('markers from the reference: 33 points distributed by zone', () => {
+  const counts = Object.fromEntries(ZONES.map(z => [z.id, z.points.length]));
+  assert.deepEqual(counts, POINT_COUNTS);
+});
+
+test('every point lies inside its own zone', () => {
   assert.deepEqual(G.findStrayPoints(ZONES), []);
 });
 
