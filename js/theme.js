@@ -4,7 +4,7 @@
 
   var App = window.App;
   var KEY = 'mapTheme';
-  var IMAGES = { day: 'img/map-day.jpg', night: 'img/map-night.jpg' };
+  var IMAGES = { day: 'img/map-day.png', night: 'img/map-night.png' };
   var button = document.getElementById('theme-toggle');
 
   function readSaved() {

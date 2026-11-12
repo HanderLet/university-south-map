@@ -28,7 +28,7 @@
     bounceAtZoomLimits: false,
   });
 
-  var mapLayer = L.imageOverlay('img/map-day.jpg', bounds, { interactive: false }).addTo(map);
+  var mapLayer = L.imageOverlay('img/map-day.png', bounds, { interactive: false }).addTo(map);
   mapLayer.on('error', function () {
     document.getElementById('map-error').hidden = false;
   });
@@ -42,7 +42,7 @@
   var App = (window.App = {
     map: map,
     mapLayer: mapLayer,
-    mapImage: 'img/map-day.jpg',
+    mapImage: 'img/map-day.png',
     bounds: bounds,
     overview: overview,
     zones: checked.zones,
