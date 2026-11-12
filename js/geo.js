@@ -28,10 +28,19 @@
     return [Math.round(ll.lng), Math.round(IMG_H - ll.lat)];
   }
 
-  // Контур зоны -> список колец (первое — внешнее, остальные — вырезы) или null
-  function normalizeRings(outline) {
-    if (isRing(outline)) return [outline];
-    if (Array.isArray(outline) && outline.length > 0 && outline.every(isRing)) return outline;
+  function isPolygon(rings) {
+    return Array.isArray(rings) && rings.length > 0 && rings.every(isRing);
+  }
+
+  // Контур зоны -> список частей (островов); часть — список колец:
+  // первое — внешнее, остальные — вырезы. Некорректный контур -> null.
+  //   [[x, y], ...]                      один остров
+  //   [[...внешний...], [...вырез...]]   остров с вырезом
+  //   [[[...остров 1...]], [[...остров 2...]]]   несколько островов
+  function normalizeParts(outline) {
+    if (isRing(outline)) return [[outline]];
+    if (isPolygon(outline)) return [outline];
+    if (Array.isArray(outline) && outline.length > 0 && outline.every(isPolygon)) return outline;
     return null;
   }
 
@@ -45,12 +54,26 @@
   }
 
   function pointInZone(p, outline) {
-    var rings = normalizeRings(outline);
-    if (!rings || !pointInRing(p, rings[0])) return false;
-    for (var i = 1; i < rings.length; i++) {
-      if (pointInRing(p, rings[i])) return false;
-    }
-    return true;
+    var parts = normalizeParts(outline);
+    if (!parts) return false;
+    return parts.some(function (rings) {
+      if (!pointInRing(p, rings[0])) return false;
+      for (var i = 1; i < rings.length; i++) {
+        if (pointInRing(p, rings[i])) return false;
+      }
+      return true;
+    });
+  }
+
+  // Центр вида, при котором окно half=[w/2, h/2] не выходит за min..max
+  // (все величины — в одних и тех же пикселях). Если окно больше области —
+  // центр области. Leaflet делает это сам для setView, но не для flyTo.
+  function clampCenter(center, half, min, max) {
+    return [0, 1].map(function (i) {
+      var lo = min[i] + half[i], hi = max[i] - half[i];
+      if (lo > hi) return (min[i] + max[i]) / 2;
+      return Math.min(Math.max(center[i], lo), hi);
+    });
   }
 
   // Отбрасывает некорректные зоны и точки, собирает предупреждения
@@ -58,7 +81,7 @@
     var warnings = [];
     var valid = [];
     (Array.isArray(zones) ? zones : []).forEach(function (z, zi) {
-      if (!z || typeof z.id !== 'string' || typeof z.name !== 'string' || !normalizeRings(z.outline)) {
+      if (!z || typeof z.id !== 'string' || typeof z.name !== 'string' || !normalizeParts(z.outline)) {
         warnings.push('Зона #' + (zi + 1) + ' (' + (z && z.name) + ') пропущена: нет id, name или корректного outline');
         return;
       }
@@ -110,8 +133,9 @@
     IMG_H: IMG_H,
     toLatLng: toLatLng,
     toPixel: toPixel,
-    normalizeRings: normalizeRings,
+    normalizeParts: normalizeParts,
     pointInZone: pointInZone,
+    clampCenter: clampCenter,
     validateZones: validateZones,
     findStrayPoints: findStrayPoints,
   };
