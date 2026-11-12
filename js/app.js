@@ -185,19 +185,22 @@
     Object.keys(App.zoneLayers).forEach(function (id) { App.zoneLayers[id].setStyle(STYLE_IDLE); });
   }
 
-  App.selectZone = function (id) {
+  // opts.fly === false — перерисовать зону без перелёта карты (нужно редактору)
+  App.selectZone = function (id, opts) {
+    opts = opts || {};
     var zone = zoneById(id);
     if (!zone) return;
+    var wasActive = App.state.activeZoneId === id;
     clearActive();
     App.state.activeZoneId = id;
-    App.state.stripSwappedAt = Date.now();
+    if (!wasActive) App.state.stripSwappedAt = Date.now();
 
     var layer = App.zoneLayers[id];
     layer.closeTooltip();
     layer.setStyle({ color: zone.color, weight: 3, opacity: 1, fillColor: zone.color, fillOpacity: 0.15 });
     setZonesClickable(false);
 
-    zone.points.forEach(function (point) {
+    zone.points.forEach(function (point, i) {
       var icon = L.divIcon({
         className: 'zone-marker',
         html: '<span style="--c:' + zone.color + '"></span>',
@@ -206,13 +209,19 @@
       });
       var m = L.marker(G.toLatLng(point.coords), { icon: icon, title: point.name, riseOnHover: true })
         .bindPopup(popupContent(zone, point), popupOptions());
+      m.pointIndex = i;
       markers.addLayer(m);
       App.state.markers.push(m);
     });
 
     renderPointStrip(zone);
-    map.flyToBounds(layer.getBounds(), { padding: [24, 24], maxZoom: 1, duration: 1 });
+    if (opts.fly !== false) map.flyToBounds(layer.getBounds(), { padding: [24, 24], maxZoom: 1, duration: 1 });
+    if (App.onZoneShown) App.onZoneShown(zone);
   };
+
+  App.zoneById = zoneById;
+  App.renderPointStrip = renderPointStrip;
+  App.renderZoneStrip = renderZoneStrip;
 
   App.showAllZones = function () {
     clearActive();
