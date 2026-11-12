@@ -27,6 +27,12 @@ html, body {
 }
 body.theme-night #map { background: var(--sea-night); }
 
+/* При приближении — чёткие пиксели вместо размытия (класс ставит app.js) */
+#map.crisp .leaflet-image-layer {
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
 #map-error {
     position: fixed;
     top: 50%;
