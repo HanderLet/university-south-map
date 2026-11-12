@@ -62,6 +62,20 @@
     return e;
   }
 
+  // Как flyToBounds, но конечный вид сразу внутри границ карты. Иначе у зон
+  // на краю карты (Заштатье, Богатый район) после полёта срабатывает
+  // maxBounds и карта резко «отдёргивается» назад.
+  function flyInside(target, padding, maxZoom) {
+    var z = map.getBoundsZoom(target, false, L.point(padding, padding).multiplyBy(2));
+    if (maxZoom != null) z = Math.min(z, maxZoom);
+    var size = map.getSize();
+    var c = map.project(target.getCenter(), z);
+    var lo = map.project(bounds.getNorthWest(), z);
+    var hi = map.project(bounds.getSouthEast(), z);
+    var p = G.clampCenter([c.x, c.y], [size.x / 2, size.y / 2], [lo.x, lo.y], [hi.x, hi.y]);
+    map.flyTo(map.unproject(L.point(p[0], p[1]), z), z, { duration: 1 });
+  }
+
   function setZonesClickable(on) {
     Object.keys(App.zoneLayers).forEach(function (id) {
       var node = App.zoneLayers[id].getElement();
@@ -72,8 +86,10 @@
   // ---------- Контуры зон ----------
 
   App.zones.forEach(function (zone) {
-    var rings = G.normalizeRings(zone.outline).map(function (r) { return r.map(G.toLatLng); });
-    var layer = L.polygon(rings, Object.assign({
+    var parts = G.normalizeParts(zone.outline).map(function (rings) {
+      return rings.map(function (r) { return r.map(G.toLatLng); });
+    });
+    var layer = L.polygon(parts, Object.assign({
       color: zone.color,
       fillColor: zone.color,
       className: 'zone-outline zone-' + zone.id,
@@ -217,7 +233,7 @@
     });
 
     renderPointStrip(zone);
-    if (opts.fly !== false) map.flyToBounds(layer.getBounds(), { padding: [24, 24], maxZoom: 1, duration: 1 });
+    if (opts.fly !== false) flyInside(layer.getBounds(), 24, 1);
     if (App.onZoneShown) App.onZoneShown(zone);
   };
 
@@ -231,7 +247,7 @@
     App.state.stripSwappedAt = Date.now();
     setZonesClickable(true);
     renderZoneStrip();
-    map.flyToBounds(overview, { padding: [12, 12], duration: 1 });
+    flyInside(overview, 12);
   };
 
   App.focusPoint = function (zoneId, index) {
