@@ -19,21 +19,33 @@ test('toPixel inverts toLatLng and rounds', () => {
   assert.deepEqual(G.toPixel({ lat: 1714 - 300.4, lng: 120.6 }), [121, 300]);
 });
 
-test('normalizeRings wraps a single ring', () => {
-  const r = G.normalizeRings([[0, 0], [10, 0], [10, 10]]);
-  assert.equal(r.length, 1);
-  assert.deepEqual(r[0][1], [10, 0]);
+test('normalizeParts wraps a single ring', () => {
+  const p = G.normalizeParts([[0, 0], [10, 0], [10, 10]]);
+  assert.equal(p.length, 1);
+  assert.equal(p[0].length, 1);
+  assert.deepEqual(p[0][0][1], [10, 0]);
 });
 
-test('normalizeRings keeps outer ring plus holes', () => {
-  assert.equal(G.normalizeRings([square, hole]).length, 2);
+test('normalizeParts keeps outer ring plus holes as one part', () => {
+  const p = G.normalizeParts([square, hole]);
+  assert.equal(p.length, 1);
+  assert.equal(p[0].length, 2);
 });
 
-test('normalizeRings rejects junk', () => {
-  assert.equal(G.normalizeRings([]), null);
-  assert.equal(G.normalizeRings('x'), null);
-  assert.equal(G.normalizeRings(undefined), null);
-  assert.equal(G.normalizeRings([[0, 0], [1, 1]]), null); // fewer than 3 vertices
+test('normalizeParts reads several islands', () => {
+  const far = square.map(([x, y]) => [x + 200, y]);
+  const p = G.normalizeParts([[square, hole], [far]]);
+  assert.equal(p.length, 2);
+  assert.equal(p[0].length, 2);
+  assert.equal(p[1].length, 1);
+});
+
+test('normalizeParts rejects junk', () => {
+  assert.equal(G.normalizeParts([]), null);
+  assert.equal(G.normalizeParts('x'), null);
+  assert.equal(G.normalizeParts(undefined), null);
+  assert.equal(G.normalizeParts([[0, 0], [1, 1]]), null); // fewer than 3 vertices
+  assert.equal(G.normalizeParts([[square], 'x']), null);
 });
 
 test('pointInZone respects holes', () => {
@@ -42,6 +54,26 @@ test('pointInZone respects holes', () => {
   assert.equal(G.pointInZone([50, 50], outline), false);
   assert.equal(G.pointInZone([150, 50], outline), false);
   assert.equal(G.pointInZone([10, 10], square), true);
+});
+
+test('pointInZone checks every island, not just the first', () => {
+  const far = square.map(([x, y]) => [x + 200, y]);
+  const outline = [[square, hole], [far]];
+  assert.equal(G.pointInZone([10, 10], outline), true);
+  assert.equal(G.pointInZone([250, 50], outline), true);
+  assert.equal(G.pointInZone([50, 50], outline), false); // hole of island 1
+  assert.equal(G.pointInZone([150, 50], outline), false); // sea between islands
+});
+
+test('clampCenter keeps the view inside the map', () => {
+  const half = [50, 30], min = [0, 0], max = [1000, 600];
+  assert.deepEqual(G.clampCenter([500, 300], half, min, max), [500, 300]);
+  assert.deepEqual(G.clampCenter([10, 590], half, min, max), [50, 570]);
+  assert.deepEqual(G.clampCenter([990, 5], half, min, max), [950, 30]);
+});
+
+test('clampCenter centres when the view is bigger than the map', () => {
+  assert.deepEqual(G.clampCenter([10, 10], [600, 400], [0, 0], [1000, 600]), [500, 300]);
 });
 
 test('validateZones drops zone without outline', () => {
