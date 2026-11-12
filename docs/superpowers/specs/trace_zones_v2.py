@@ -29,8 +29,12 @@ SEEDS = {
     'outskirts': [(430, 1000), (330, 600)],
     'alcatraz':  [(1065, 960)],
 }
-# extra areas joined to a zone: bridge to the south island, FBI ship
-BRIDGES = {'rich': [(1600, 1020, 1632, 1110)], 'fbi': [(1546, 598, 1606, 619)]}
+# extra areas joined to a zone: FBI ship
+BRIDGES = {'fbi': [(1546, 598, 1606, 619)]}
+# zones made of several islands: every part of at least MIN_PART px is kept
+# (the bridge between the rich islands is not part of the zone)
+MULTI = {'rich'}
+MIN_PART = 2000
 
 
 def disk_offsets(r):
@@ -107,9 +111,10 @@ for zid, seeds in SEEDS.items():
     zone = dilate(erode(zone, 3), 3)                # cut spikes
     zone &= dilate(cell, 1)                         # never cross the customer's line
     comps = sorted(components(zone, 30), key=lambda c: -c.sum())
-    if len(comps) > 1:
-        print(f'  {zid}: dropping {len(comps) - 1} small part(s):', [int(c.sum()) for c in comps[1:]])
-    masks[zid] = comps[0]
+    keep = [c for c in comps if c.sum() >= MIN_PART] if zid in MULTI else comps[:1]
+    if len(comps) > len(keep):
+        print(f'  {zid}: dropping {len(comps) - len(keep)} small part(s):', [int(c.sum()) for c in comps[len(keep):]])
+    masks[zid] = keep
 
 
 def trace(mask):
@@ -162,14 +167,18 @@ def chaikin(pts, n=2):
 
 ov = Image.open(clean_p).convert('RGB')
 draw = ImageDraw.Draw(ov, 'RGBA')
-for zid, mask in masks.items():
-    ring = dp(chaikin(dp(trace(mask), 1.2), 2), 0.6)
-    ring = [[int(round(x)), int(round(y))] for x, y in ring]
-    # drop consecutive duplicates
-    ring = [p for i, p in enumerate(ring) if p != ring[i - 1]]
-    result[zid] = ring
-    draw.polygon([tuple(p) for p in ring], outline=(255, 0, 255, 255), fill=(255, 0, 255, 40))
-    print(f'{zid}: {len(ring)} vertices, area {int(mask.sum())}')
+for zid, parts in masks.items():
+    rings = []
+    for mask in parts:
+        ring = dp(chaikin(dp(trace(mask), 1.2), 2), 0.6)
+        ring = [[int(round(x)), int(round(y))] for x, y in ring]
+        # drop consecutive duplicates
+        ring = [p for i, p in enumerate(ring) if p != ring[i - 1]]
+        rings.append(ring)
+        draw.polygon([tuple(p) for p in ring], outline=(255, 0, 255, 255), fill=(255, 0, 255, 40))
+        print(f'{zid}: {len(ring)} vertices, area {int(mask.sum())}')
+    # one island -> plain ring; several -> [[island1], [island2], ...]
+    result[zid] = rings[0] if zid not in MULTI else [[r] for r in rings]
 for x, y in dots:
     draw.ellipse([x - 5, y - 5, x + 5, y + 5], outline=(0, 255, 0, 255), width=2)
 print(len(dots), 'pink dots')

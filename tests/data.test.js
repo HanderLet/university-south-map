@@ -19,8 +19,8 @@ const ANCHORS = {
   outskirts: [[430, 1000], [330, 600]],
   alcatraz: [[1065, 960]],
 };
-// море, островок в конце длинного пирса, корабль у Основного Штата
-const NOWHERE = [[1100, 1300], [1230, 1010], [1057, 730]];
+// море, островок в конце длинного пирса, корабль у Основного Штата, мост между островами Богатого района
+const NOWHERE = [[1100, 1300], [1230, 1010], [1057, 730], [1616, 1070]];
 // розовые точки с разметки заказчика (33 шт.)
 const POINT_COUNTS = { state: 13, farm: 6, fbi: 4, county: 5, rich: 2, race: 0, outskirts: 3, alcatraz: 0 };
 
@@ -71,7 +71,7 @@ test('every point lies inside its own zone', () => {
 test('all coordinates within the image', () => {
   const inImg = ([x, y]) => x >= 0 && x <= 2000 && y >= 0 && y <= 1714;
   ZONES.forEach(z => {
-    G.normalizeRings(z.outline).flat().forEach(p => assert.ok(inImg(p), `${z.id} ${p}`));
+    G.normalizeParts(z.outline).flat(2).forEach(p => assert.ok(inImg(p), `${z.id} ${p}`));
     z.points.forEach(pt => assert.ok(inImg(pt.coords), `${z.id} ${pt.name}`));
   });
 });
