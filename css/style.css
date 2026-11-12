@@ -139,6 +139,110 @@ body.theme-night #map { background: var(--sea-night); }
     transition: transform .15s;
 }
 .zone-marker:hover span { transform: scale(1.2); }
+.zone-marker.is-active span {
+    transform: scale(1.35);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, .35), 0 0 16px var(--c), 0 1px 4px rgba(0, 0, 0, .6);
+}
+.point-card.is-active { border-color: var(--c); background: var(--card-hover); }
+
+/* ---------- Памятка точки ---------- */
+
+#note {
+    position: fixed;
+    top: 72px; /* под переключателем день/ночь */
+    right: 12px;
+    z-index: 940;
+    display: flex;
+    flex-direction: column;
+    width: min(380px, calc(100vw - 24px));
+    max-height: calc(100vh - 72px - var(--strip-h) - 12px);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-top: 4px solid var(--c);
+    border-radius: 14px;
+    background: rgba(26, 29, 36, .96);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .5);
+    animation: note-in .18s ease-out;
+}
+#note[hidden] { display: none; }
+@keyframes note-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: none; }
+}
+.note-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 10px 0 18px;
+}
+.note-zone {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+.note-zone::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--c);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .3);
+}
+.note-close {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+.note-close:hover { background: var(--card-hover); color: var(--text); }
+.note-close:focus-visible { outline: 2px solid #8fb4ff; }
+.note-title {
+    margin: 6px 0 0;
+    padding: 0 18px;
+    font-size: 20px;
+    line-height: 1.25;
+}
+.note-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 10px 0 16px;
+    padding: 0 18px;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.55;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    scrollbar-width: thin;
+}
+.note-body.empty { color: var(--muted); font-style: italic; }
+
+/* Телефон: памятка — лист над нижней лентой */
+@media (max-width: 640px) {
+    #note {
+        top: auto;
+        left: 8px;
+        right: 8px;
+        bottom: calc(var(--strip-h) + 8px);
+        width: auto;
+        max-height: 55vh;
+        animation-name: note-up;
+    }
+    .note-title { font-size: 18px; }
+}
+@keyframes note-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+}
 
 .zone-tip {
     background: rgba(20, 22, 28, .92);
