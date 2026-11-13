@@ -44,6 +44,15 @@
     return null;
   }
 
+  // Места точки: coords — [x, y] или список мест [[x, y], [x, y], ...]
+  // (одна точка в нескольких местах карты). Некорректные coords -> null.
+  function pointPlaces(point) {
+    var c = point && point.coords;
+    if (isPair(c)) return [c];
+    if (Array.isArray(c) && c.length > 0 && c.every(isPair)) return c;
+    return null;
+  }
+
   function pointInRing(p, ring) {
     var x = p[0], y = p[1], inside = false;
     for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -87,8 +96,8 @@
       }
       var points = [];
       (Array.isArray(z.points) ? z.points : []).forEach(function (pt, pi) {
-        if (!pt || typeof pt.name !== 'string' || !pt.name || !isPair(pt.coords)) {
-          warnings.push('Зона «' + z.name + '»: точка #' + (pi + 1) + ' пропущена: нет name или coords не [x, y]');
+        if (!pt || typeof pt.name !== 'string' || !pt.name || !pointPlaces(pt)) {
+          warnings.push('Зона «' + z.name + '»: точка #' + (pi + 1) + ' пропущена: нет name или coords не [x, y] / [[x, y], ...]');
           return;
         }
         points.push(pt);
@@ -105,9 +114,12 @@
     var out = [];
     zones.forEach(function (z) {
       (z.points || []).forEach(function (pt) {
-        if (!pointInZone(pt.coords, z.outline)) {
-          out.push('Зона «' + z.name + '»: точка «' + pt.name + '» вне контура');
-        }
+        var places = pointPlaces(pt) || [];
+        places.forEach(function (c, i) {
+          if (pointInZone(c, z.outline)) return;
+          var where = places.length > 1 ? ' (место ' + (i + 1) + ')' : '';
+          out.push('Зона «' + z.name + '»: точка «' + pt.name + '»' + where + ' вне контура');
+        });
       });
     });
     return out;
@@ -134,6 +146,7 @@
     toLatLng: toLatLng,
     toPixel: toPixel,
     normalizeParts: normalizeParts,
+    pointPlaces: pointPlaces,
     pointInZone: pointInZone,
     clampCenter: clampCenter,
     validateZones: validateZones,
