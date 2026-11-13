@@ -131,10 +131,17 @@
     addBtn.hidden = true;
     var index = zone.points.length - 1;
     App.selectZone(zone.id, { fly: false });
-    App.state.markers[index].openPopup();
+    App.markerFor(index).openPopup();
   });
 
   // ---------- Точки выбранной зоны ----------
+
+  function whereText(point) {
+    var places = G.pointPlaces(point);
+    if (places.length === 1) return '[' + places[0].join(', ') + '] — точку можно перетащить';
+    return places.map(function (c, i) { return 'Место ' + (i + 1) + ': [' + c.join(', ') + ']'; }).join('\n') +
+      '\nКаждое место можно перетащить';
+  }
 
   function editForm(zone, point, marker) {
     var form = el('div', 'popup ed-form');
@@ -153,7 +160,7 @@
     desc.placeholder = 'Описание точки — показывается в памятке справа. Можно в несколько абзацев.';
     descLabel.appendChild(desc);
 
-    var where = el('div', 'ed-where', '[' + point.coords[0] + ', ' + point.coords[1] + '] — точку можно перетащить');
+    var where = el('div', 'ed-where', whereText(point));
     var del = el('button', 'ed-btn ed-danger', 'Удалить точку');
     del.type = 'button';
 
@@ -185,7 +192,7 @@
     form.appendChild(where);
     form.appendChild(del);
     form.updateWhere = function () {
-      where.textContent = '[' + point.coords[0] + ', ' + point.coords[1] + '] — точку можно перетащить';
+      where.textContent = whereText(point);
     };
     return form;
   }
@@ -194,12 +201,18 @@
     App.state.markers.forEach(function (marker) {
       var point = zone.points[marker.pointIndex];
       var form = editForm(zone, point, marker);
+      marker.edForm = form;
       marker.bindPopup(form, App.popupOptions());
       if (marker.dragging) marker.dragging.enable();
       marker.on('dragend', function () {
-        point.coords = G.toPixel(marker.getLatLng());
-        form.updateWhere();
-        coordsLine.textContent = '[' + point.coords[0] + ', ' + point.coords[1] + ']';
+        var c = G.toPixel(marker.getLatLng());
+        // у точки в нескольких местах двигаем только это место
+        if (G.pointPlaces(point).length > 1) point.coords[marker.placeIndex] = c;
+        else point.coords = c;
+        App.state.markers.forEach(function (m) {
+          if (m.pointIndex === marker.pointIndex && m.edForm) m.edForm.updateWhere();
+        });
+        coordsLine.textContent = '[' + c[0] + ', ' + c[1] + ']';
         markDirty();
       });
     });

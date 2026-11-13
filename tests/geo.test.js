@@ -128,3 +128,28 @@ test('readableOnDark replaces too dark colours with light text', () => {
   assert.equal(G.readableOnDark('#6a2c91'), '#e8eaf0');
   assert.equal(G.readableOnDark('nonsense'), '#e8eaf0');
 });
+
+test('pointPlaces: one place, several places, junk', () => {
+  assert.deepEqual(G.pointPlaces({ coords: [3, 4] }), [[3, 4]]);
+  assert.deepEqual(G.pointPlaces({ coords: [[1, 2], [3, 4]] }), [[1, 2], [3, 4]]);
+  assert.equal(G.pointPlaces({ coords: [] }), null);
+  assert.equal(G.pointPlaces({ coords: [[1, 2], [3]] }), null);
+  assert.equal(G.pointPlaces({}), null);
+});
+
+test('validateZones keeps a point with several places', () => {
+  const res = G.validateZones([{ id: 'b', name: 'B', color: '#fff', outline: square, points: [
+    { name: 'twin', coords: [[10, 10], [20, 20]] },
+    { name: 'bad twin', coords: [[10, 10], ['x', 1]] },
+  ] }]);
+  assert.deepEqual(res.zones[0].points.map(p => p.name), ['twin']);
+  assert.equal(res.warnings.length, 1);
+});
+
+test('findStrayPoints checks every place of a point', () => {
+  const out = G.findStrayPoints([{ id: 'b', name: 'B', outline: square, points: [
+    { name: 'Ферма', coords: [[10, 10], [500, 500]] },
+  ] }]);
+  assert.equal(out.length, 1);
+  assert.match(out[0], /Ферма.*место 2/);
+});
