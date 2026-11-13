@@ -47,3 +47,9 @@ test('missing description is written as empty string', () => {
   const z = [{ ...sample[1], points: [{ name: 'A', coords: [1, 2] }] }];
   assert.equal(load(serializeZones(z))[0].points[0].description, '');
 });
+
+test('serializeZones writes a multi-place point as a list of places', () => {
+  const src = serializeZones([{ id: 'f', name: 'F', color: '#fff', outline: [[0, 0], [9, 0], [9, 9]],
+    points: [{ name: 'Ферма', coords: [[1, 2], [3, 4]], description: '' }] }]);
+  assert.match(src, /coords: \[\[1, 2\], \[3, 4\]\]/);
+});
