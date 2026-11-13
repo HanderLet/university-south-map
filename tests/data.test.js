@@ -22,7 +22,7 @@ const ANCHORS = {
 // море, островок в конце длинного пирса, корабль у Основного Штата, мост между островами Богатого района
 const NOWHERE = [[1100, 1300], [1230, 1010], [1057, 730], [1616, 1070]];
 // розовые точки с разметки заказчика (33 шт.)
-const POINT_COUNTS = { state: 15, farm: 8, fbi: 4, county: 5, rich: 2, race: 0, outskirts: 3, alcatraz: 0 };
+const POINT_COUNTS = { state: 13, farm: 8, fbi: 4, county: 3, rich: 2, race: 0, outskirts: 3, alcatraz: 0 };
 
 const zonesContaining = p => ZONES.filter(z => G.pointInZone(p, z.outline)).map(z => z.id);
 
@@ -59,7 +59,7 @@ test('sea and small islands belong to no zone', () => {
   NOWHERE.forEach(p => assert.deepEqual(zonesContaining(p), [], `${p}`));
 });
 
-test('markers from the reference: 38 points distributed by zone', () => {
+test('markers from the reference: 36 points distributed by zone', () => {
   const counts = Object.fromEntries(ZONES.map(z => [z.id, z.points.length]));
   assert.deepEqual(counts, POINT_COUNTS);
 });
@@ -84,4 +84,17 @@ test('tree farm is one point in two places of the farm zone', () => {
   // постройки с розовыми крышами — не точки (были добавлены по ошибке)
   const all = farm.points.flatMap(p => G.pointPlaces(p));
   assert.ok(!all.some(([x, y]) => Math.abs(x - 905) < 6 && (Math.abs(y - 644) < 6 || Math.abs(y - 670) < 6)));
+});
+
+test('every point has a real name and a description', () => {
+  ZONES.forEach(z => z.points.forEach(p => {
+    assert.doesNotMatch(p.name, /^Точка \d+$/, `${z.id} ${p.name}`);
+    assert.ok(p.description.trim(), `${z.id} ${p.name}`);
+  }));
+});
+
+test('grouped points share one card: mine/sawmill/site and abandoned places', () => {
+  const places = (zone, name) => G.pointPlaces(ZONES.find(z => z.id === zone).points.find(p => p.name === name)).length;
+  assert.equal(places('state', 'Шахта / Лесопилка / Стройка'), 3);
+  assert.equal(places('county', 'Заброшенные Завод / Обсерватория / Церковь'), 3);
 });
