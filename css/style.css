@@ -359,5 +359,5 @@ body.theme-night .zone-fbi { filter: drop-shadow(0 0 2px rgba(255, 255, 255, .9)
 }
 .ed-form input:focus,
 .ed-form textarea:focus { outline: 2px solid #3b82f6; outline-offset: 0; }
-.ed-where { font: 12px ui-monospace, Consolas, monospace; color: var(--muted); }
+.ed-where { font: 12px ui-monospace, Consolas, monospace; color: var(--muted); white-space: pre-line; }
 body.edit-mode .zone-marker { cursor: move; }

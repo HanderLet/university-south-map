@@ -151,9 +151,10 @@
   });
 
   function markActivePoint(index) {
-    App.state.markers.forEach(function (m, i) {
+    // у точки в нескольких местах подсвечиваются все её маркеры
+    App.state.markers.forEach(function (m) {
       var node = m.getElement();
-      if (node) node.classList.toggle('is-active', i === index);
+      if (node) node.classList.toggle('is-active', m.pointIndex === index);
     });
     Array.prototype.forEach.call(strip.querySelectorAll('.point-card'), function (card) {
       card.classList.toggle('is-active', Number(card.dataset.index) === index);
@@ -174,12 +175,38 @@
     return map.unproject(map.project(latlng, zoom).add(noteOffset()), zoom);
   }
 
+  // Видна ли точка на карте, не под памяткой
+  function visibleBesideNote(latlng) {
+    var p = map.latLngToContainerPoint(latlng);
+    var off = noteOffset();
+    var size = map.getSize();
+    return p.x > 24 && p.y > 24 && p.x < size.x - 2 * off.x - 24 && p.y < size.y - 2 * off.y - 24;
+  }
+
+  // Показать все места точки сразу (в части карты, не закрытой памяткой)
+  function fitBesideNote(latlngs, maxZoom) {
+    var off = noteOffset();
+    map.stop();
+    map.fitBounds(L.latLngBounds(latlngs), {
+      paddingTopLeft: [48, 48],
+      paddingBottomRight: [48 + 2 * off.x, 48 + 2 * off.y],
+      maxZoom: maxZoom,
+      animate: true,
+    });
+  }
+
+  function markersOf(index) {
+    return App.state.markers.filter(function (m) { return m.pointIndex === index; });
+  }
+  App.markerFor = function (index) { return markersOf(index)[0] || null; };
+
   App.openNote = function (zoneId, index) {
     var zone = zoneById(zoneId);
     var point = zone && zone.points[index];
     if (!point) return;
     note.style.setProperty('--c', zone.color);
-    noteZone.textContent = zone.name;
+    var n = G.pointPlaces(point).length;
+    noteZone.textContent = zone.name + (n > 1 ? ' · ' + n + ' ' + plural(n, 'место', 'места', 'мест') + ' на карте' : '');
     noteTitle.textContent = point.name;
     var text = typeof point.description === 'string' ? point.description.trim() : '';
     noteBody.textContent = text || 'Описание скоро появится';
@@ -292,27 +319,32 @@
     setZonesClickable(false);
 
     zone.points.forEach(function (point, i) {
-      var icon = L.divIcon({
-        className: 'zone-marker',
-        html: '<span style="--c:' + zone.color + '"></span>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
+      // маркер на каждое место точки (обычно одно)
+      G.pointPlaces(point).forEach(function (place, k) {
+        var icon = L.divIcon({
+          className: 'zone-marker',
+          html: '<span style="--c:' + zone.color + '"></span>',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        });
+        var m = L.marker(G.toLatLng(place), { icon: icon, title: point.name, riseOnHover: true });
+        m.on('click', function () {
+          if (App.editMode) return; // в редакторе по клику открывается форма точки
+          App.openNote(zone.id, i);
+          var all = markersOf(i).map(function (x) { return x.getLatLng(); });
+          if (all.length > 1) {
+            // другое место точки за краем экрана или под памяткой — показываем оба
+            if (!all.every(visibleBesideNote)) fitBesideNote(all, Math.max(map.getZoom(), 1));
+          } else if (!visibleBesideNote(m.getLatLng())) {
+            // точка оказалась под памяткой — сдвигаем карту
+            map.panTo(centerBesideNote(m.getLatLng(), map.getZoom()));
+          }
+        });
+        m.pointIndex = i;
+        m.placeIndex = k;
+        markers.addLayer(m);
+        App.state.markers.push(m);
       });
-      var m = L.marker(G.toLatLng(point.coords), { icon: icon, title: point.name, riseOnHover: true });
-      m.on('click', function () {
-        if (App.editMode) return; // в редакторе по клику открывается форма точки
-        App.openNote(zone.id, i);
-        // точка оказалась под памяткой — сдвигаем карту
-        var p = map.latLngToContainerPoint(m.getLatLng());
-        var off = noteOffset();
-        var size = map.getSize();
-        if ((off.x && p.x > size.x - 2 * off.x - 24) || (off.y && p.y > size.y - 2 * off.y - 24)) {
-          map.panTo(centerBesideNote(m.getLatLng(), map.getZoom()));
-        }
-      });
-      m.pointIndex = i;
-      markers.addLayer(m);
-      App.state.markers.push(m);
     });
 
     renderPointStrip(zone);
@@ -335,7 +367,8 @@
 
   App.focusPoint = function (zoneId, index) {
     if (App.state.activeZoneId !== zoneId) App.selectZone(zoneId);
-    var m = App.state.markers[index];
+    var ms = markersOf(index);
+    var m = ms[0];
     if (!m) return;
     map.stop();
     var z = Math.min(map.getMaxZoom(), map.getZoom() + 1);
@@ -345,6 +378,10 @@
       return;
     }
     App.openNote(zoneId, index);
+    if (ms.length > 1) {
+      fitBesideNote(ms.map(function (x) { return x.getLatLng(); }), z);
+      return;
+    }
     map.setView(centerBesideNote(m.getLatLng(), z), z, { animate: true });
   };
 

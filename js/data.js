@@ -7,6 +7,8 @@
 // Точка:  { name: "Название", coords: [x, y], description: "Краткое описание" }
 // Пустое description — на сайте будет «Описание скоро появится».
 // Перенос строки в описании — \n.
+// Одна точка в нескольких местах (на карте подсвечиваются вместе):
+// { name: "Ферма деревьев", coords: [[x1, y1], [x2, y2]], description: "..." }
 //
 // outline — контур зоны (список вершин [x, y]). Можно задать контур с вырезом:
 // outline: [[...внешний контур...], [...вырез...]]
@@ -22,16 +24,18 @@ const ZONES = [
       { name: "Точка 1", coords: [1260, 465], description: "" },
       { name: "Точка 2", coords: [1176, 487], description: "" },
       { name: "Точка 3", coords: [1213, 503], description: "" },
-      { name: "Точка 4", coords: [1305, 531], description: "" },
-      { name: "Точка 5", coords: [1173, 589], description: "" },
-      { name: "Точка 6", coords: [1231, 617], description: "" },
-      { name: "Точка 7", coords: [1144, 649], description: "" },
-      { name: "Точка 8", coords: [1178, 664], description: "" },
-      { name: "Точка 9", coords: [1301, 674], description: "" },
-      { name: "Точка 10", coords: [1174, 730], description: "" },
-      { name: "Точка 11", coords: [1151, 769], description: "" },
-      { name: "Точка 12", coords: [1195, 778], description: "" },
-      { name: "Точка 13", coords: [1275, 826], description: "" },
+      { name: "Точка 4", coords: [1135, 515], description: "" },
+      { name: "Точка 5", coords: [1305, 531], description: "" },
+      { name: "Точка 6", coords: [1173, 589], description: "" },
+      { name: "Точка 7", coords: [1231, 617], description: "" },
+      { name: "Точка 8", coords: [1144, 649], description: "" },
+      { name: "Точка 9", coords: [1178, 664], description: "" },
+      { name: "Точка 10", coords: [1301, 674], description: "" },
+      { name: "Точка 11", coords: [1174, 730], description: "" },
+      { name: "Точка 12", coords: [1230, 765], description: "" },
+      { name: "Точка 13", coords: [1151, 769], description: "" },
+      { name: "Точка 14", coords: [1195, 778], description: "" },
+      { name: "Точка 15", coords: [1275, 826], description: "" },
     ],
   },
   {
@@ -43,9 +47,11 @@ const ZONES = [
       { name: "Точка 1", coords: [844, 527], description: "" },
       { name: "Точка 2", coords: [902, 575], description: "" },
       { name: "Точка 3", coords: [945, 589], description: "" },
-      { name: "Точка 4", coords: [904, 644], description: "" },
-      { name: "Точка 5", coords: [906, 670], description: "" },
-      { name: "Точка 6", coords: [788, 801], description: "" },
+      { name: "Ферма деревьев", coords: [[897, 657], [900, 810]], description: "" },
+      { name: "Точка 4", coords: [860, 705], description: "" },
+      { name: "Точка 5", coords: [891, 709], description: "" },
+      { name: "Точка 6", coords: [927, 740], description: "" },
+      { name: "Точка 7", coords: [788, 801], description: "" },
     ],
   },
   {
