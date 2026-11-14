@@ -16,6 +16,9 @@
     '// Одна точка в нескольких местах (на карте подсвечиваются вместе):',
     '// { name: "Ферма деревьев", coords: [[x1, y1], [x2, y2]], description: "..." }',
     '//',
+    '// description у зоны (необязательно) — описание зоны; у зоны без точек',
+    '// оно открывается в памятке при выборе зоны.',
+    '//',
     '// outline — контур зоны (список вершин [x, y]). Можно задать контур с вырезом:',
     '// outline: [[...внешний контур...], [...вырез...]]',
     '// Зона из нескольких островов: outline: [[[...остров 1...]], [[...остров 2...]]]',
@@ -35,6 +38,7 @@
       out.push('    id: ' + str(z.id) + ',');
       out.push('    name: ' + str(z.name) + ',');
       out.push('    color: ' + str(z.color) + ',');
+      if (z.description) out.push('    description: ' + str(z.description) + ',');
       out.push('    outline: ' + coords(z.outline) + ',');
       out.push('    points: [');
       (z.points || []).forEach(function (p) {
