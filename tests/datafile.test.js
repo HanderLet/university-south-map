@@ -53,3 +53,9 @@ test('serializeZones writes a multi-place point as a list of places', () => {
     points: [{ name: 'Ферма', coords: [[1, 2], [3, 4]], description: '' }] }]);
   assert.match(src, /coords: \[\[1, 2\], \[3, 4\]\]/);
 });
+
+test('serializeZones keeps a zone description', () => {
+  const src = serializeZones([{ id: 'r', name: 'R', color: '#fff', description: 'Про "зону"', outline: [[0, 0], [9, 0], [9, 9]], points: [] }]);
+  assert.match(src, /^ {4}description: "Про \\"зону\\"",$/m);
+  assert.doesNotMatch(serializeZones([{ id: 'r', name: 'R', color: '#fff', outline: [[0, 0], [9, 0], [9, 9]], points: [] }]), /^ {4}description/m);
+});
