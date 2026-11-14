@@ -82,7 +82,8 @@
     var z = map.getBoundsZoom(target, false, L.point(padding, padding).multiplyBy(2));
     if (maxZoom != null) z = Math.min(z, maxZoom);
     var size = map.getSize();
-    var c = map.project(target.getCenter(), z);
+    // открыта памятка — цель в середине незакрытой ею части карты
+    var c = map.project(target.getCenter(), z).add(noteOffset());
     var lo = map.project(bounds.getNorthWest(), z);
     var hi = map.project(bounds.getSouthEast(), z);
     var p = G.clampCenter([c.x, c.y], [size.x / 2, size.y / 2], [lo.x, lo.y], [hi.x, hi.y]);
@@ -217,6 +218,24 @@
     markActivePoint(index);
   };
 
+  // Памятка с описанием самой зоны (у зон без точек — Гоночная трасса, Алькатрас)
+  App.openZoneNote = function (zoneId) {
+    var zone = zoneById(zoneId);
+    var text = zone && typeof zone.description === 'string' ? zone.description.trim() : '';
+    if (!text) return;
+    note.style.setProperty('--c', zone.color);
+    noteZone.textContent = 'Зона';
+    noteTitle.textContent = zone.name;
+    noteBody.textContent = text;
+    noteBody.classList.remove('empty');
+    noteBody.scrollTop = 0;
+    note.hidden = false;
+    App.state.notePoint = null;
+    markActivePoint(-1);
+    var about = strip.querySelector('.about-card');
+    if (about) about.classList.add('is-active');
+  };
+
   App.closeNote = function () {
     note.hidden = true;
     App.state.notePoint = null;
@@ -242,7 +261,8 @@
       card.appendChild(el('span', 'swatch'));
       card.appendChild(el('span', 'card-title', zone.name));
       var n = zone.points.length;
-      card.appendChild(el('span', 'card-sub', n ? n + ' ' + plural(n, 'точка', 'точки', 'точек') : 'Точек пока нет'));
+      var sub = n ? n + ' ' + plural(n, 'точка', 'точки', 'точек') : (zone.description ? 'Описание зоны' : 'Точек пока нет');
+      card.appendChild(el('span', 'card-sub', sub));
       card.addEventListener('click', function () {
         if (stripGuarded()) return;
         App.selectZone(zone.id);
@@ -252,6 +272,7 @@
       track.appendChild(card);
     });
     strip.appendChild(track);
+    updateStripEdges();
   }
 
   function renderPointStrip(zone) {
@@ -265,7 +286,16 @@
     });
     track.appendChild(back);
 
-    if (!zone.points.length) {
+    if (zone.description) {
+      // памятку зоны можно закрыть — эта карточка открывает её снова
+      var about = el('button', 'card point-card about-card');
+      about.type = 'button';
+      about.style.setProperty('--c', zone.color);
+      about.appendChild(el('span', 'about-icon', 'i'));
+      about.appendChild(el('span', 'card-title', 'О зоне'));
+      about.addEventListener('click', function () { App.openZoneNote(zone.id); });
+      track.appendChild(about);
+    } else if (!zone.points.length) {
       track.appendChild(el('div', 'strip-empty', 'Точек пока нет'));
     }
     zone.points.forEach(function (point, i) {
@@ -280,7 +310,34 @@
       track.appendChild(card);
     });
     strip.appendChild(track);
+    updateStripEdges();
   }
+
+  // Полосы прокрутки у ленты нет: длинный список крутится колёсиком мыши,
+  // а затухание по краям подсказывает, что там есть ещё карточки
+  function stripTrack() { return strip.querySelector('.strip-track'); }
+
+  function updateStripEdges() {
+    var t = stripTrack();
+    if (!t) return;
+    var max = t.scrollWidth - t.clientWidth;
+    strip.classList.toggle('more-left', t.scrollLeft > 2);
+    strip.classList.toggle('more-right', t.scrollLeft < max - 2);
+  }
+
+  strip.addEventListener('wheel', function (e) {
+    var t = stripTrack();
+    if (!t || t.scrollWidth <= t.clientWidth) return;
+    var d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (!d) return;
+    if (e.deltaMode === 1) d *= 32; // прокрутка строками
+    else if (e.deltaMode === 2) d *= t.clientWidth; // страницами
+    e.preventDefault();
+    t.scrollLeft += d;
+    updateStripEdges();
+  }, { passive: false });
+  strip.addEventListener('scroll', updateStripEdges, true);
+  window.addEventListener('resize', updateStripEdges);
 
   function stripGuarded() {
     return Date.now() - App.state.stripSwappedAt < STRIP_GUARD_MS;
@@ -348,6 +405,8 @@
     });
 
     renderPointStrip(zone);
+    // у зоны без точек сразу показываем её описание
+    if (!zone.points.length && !App.editMode) App.openZoneNote(zone.id);
     if (opts.fly !== false) flyInside(layer.getBounds(), 24, 1);
     if (App.onZoneShown) App.onZoneShown(zone);
   };

@@ -22,7 +22,7 @@ const ANCHORS = {
 // море, островок в конце длинного пирса, корабль у Основного Штата, мост между островами Богатого района
 const NOWHERE = [[1100, 1300], [1230, 1010], [1057, 730], [1616, 1070]];
 // розовые точки с разметки заказчика (33 шт.)
-const POINT_COUNTS = { state: 13, farm: 8, fbi: 4, county: 3, rich: 2, race: 0, outskirts: 3, alcatraz: 0 };
+const POINT_COUNTS = { state: 14, farm: 8, fbi: 4, county: 3, rich: 2, race: 0, outskirts: 1, alcatraz: 0 };
 
 const zonesContaining = p => ZONES.filter(z => G.pointInZone(p, z.outline)).map(z => z.id);
 
@@ -59,7 +59,7 @@ test('sea and small islands belong to no zone', () => {
   NOWHERE.forEach(p => assert.deepEqual(zonesContaining(p), [], `${p}`));
 });
 
-test('markers from the reference: 36 points distributed by zone', () => {
+test('markers from the reference: 37 points distributed by zone', () => {
   const counts = Object.fromEntries(ZONES.map(z => [z.id, z.points.length]));
   assert.deepEqual(counts, POINT_COUNTS);
 });
@@ -97,4 +97,15 @@ test('grouped points share one card: mine/sawmill/site and abandoned places', ()
   const places = (zone, name) => G.pointPlaces(ZONES.find(z => z.id === zone).points.find(p => p.name === name)).length;
   assert.equal(places('state', 'Шахта / Лесопилка / Стройка'), 3);
   assert.equal(places('county', 'Заброшенные Завод / Обсерватория / Церковь'), 3);
+});
+
+test('zones without points have a description instead', () => {
+  ZONES.filter(z => !z.points.length).forEach(z => assert.ok((z.description || '').trim(), z.id));
+});
+
+test('outskirts is one point in three places; СМИ is in the state', () => {
+  const out = ZONES.find(z => z.id === 'outskirts').points;
+  assert.equal(out.length, 1);
+  assert.equal(G.pointPlaces(out[0]).length, 3);
+  assert.ok(ZONES.find(z => z.id === 'state').points.some(p => p.name === 'СМИ'));
 });
