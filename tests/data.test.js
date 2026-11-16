@@ -109,3 +109,12 @@ test('outskirts is one point in three places; СМИ is in the state', () => {
   assert.equal(G.pointPlaces(out[0]).length, 3);
   assert.ok(ZONES.find(z => z.id === 'state').points.some(p => p.name === 'СМИ'));
 });
+
+test('strip order: state services first, bar and fishing first on the farm, museum first in the county', () => {
+  const names = id => ZONES.find(z => z.id === id).points.map(p => p.name);
+  assert.deepEqual(names('state').slice(0, 8), ['Армия', 'Больница', 'СМИ', 'Мэрия', 'Университет',
+    'ЦПД (Центральный Полицейский Департамент)', 'Бедный район', 'Библиотека']);
+  assert.deepEqual(names('farm').slice(0, 3), ['Бар', 'Рыбалка (озеро)', 'Рыбалка (река)']);
+  assert.deepEqual(names('fbi'), ['ФБР (Федеральное Бюро Расследований)', 'Казино', 'Кино', 'Яхта']);
+  assert.equal(names('county')[0], 'Музей');
+});
